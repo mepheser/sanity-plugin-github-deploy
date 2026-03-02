@@ -9,7 +9,18 @@
     "deploy"
   ],
   "license": "MIT",
-  "author": "",
+  "author": "Matthias Epheser-Andrä <contact@matthiasepheser.at>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mepheser/sanity-plugin-github-deploy.git"
+  },
+  "homepage": "https://github.com/mepheser/sanity-plugin-github-deploy#readme",
+  "bugs": {
+    "url": "https://github.com/mepheser/sanity-plugin-github-deploy/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {

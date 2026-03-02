@@ -1,5 +1,7 @@
+/** @public */
 export type DeployStatus = 'idle' | 'queued' | 'in_progress' | 'completed' | 'failed'
 
+/** @public */
 export interface DeployRun {
   id: number
   status: DeployStatus
@@ -11,6 +13,7 @@ export interface DeployRun {
   htmlUrl: string
 }
 
+/** @public */
 export interface GitHubConfig {
   owner: string
   repo: string
@@ -18,6 +21,7 @@ export interface GitHubConfig {
   branch: string
 }
 
+/** @public */
 export interface DeployToolOptions {
   githubToken: string
   github: GitHubConfig
