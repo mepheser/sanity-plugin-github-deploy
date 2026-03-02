@@ -2,6 +2,28 @@
 
 A Sanity Studio plugin for triggering and monitoring GitHub Actions deployments directly from the studio.
 
+## Motivation
+
+Sanity offers powerful live content features and cache invalidation for frameworks like Next.js and Astro in SSR mode. But sometimes you just want a fully static site served from a CDN — zero runtime, zero maintenance, maximum performance.
+
+In that setup, content changes don't go live until you rebuild and redeploy the site. This plugin gives editors a "Deploy" tab right inside Sanity Studio so they can trigger a full rebuild, deploy, and cache purge with a single click — no need to open GitHub or understand CI/CD.
+
+## Preparation
+
+Before using this plugin, you need a GitHub Actions workflow in your repository that handles the full deploy pipeline:
+
+1. **Build** the static site with content from Sanity (e.g. `astro build` or `next build && next export`)
+2. **Upload** the generated files to your CDN or static hosting provider
+3. **Purge** the CDN or server cache so the new version goes live immediately
+
+The plugin triggers this workflow via GitHub's [workflow dispatch API](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event). Your workflow file needs a `workflow_dispatch` trigger, and the GitHub token you provide must have the `actions` scope.
+
+## Features
+
+- Display of current live deployment
+- List of changed content (documents) since last live deployment
+- Button to trigger a new deployment with progress indicator
+
 ## Installation
 
 ```sh
@@ -56,13 +78,6 @@ export default defineConfig({
 | `workflowId` | `string` | Workflow filename (e.g. `deploy.yml`) or numeric ID |
 | `branch` | `string` | Branch to trigger deployments on |
 
-## Features
-
-- Trigger GitHub Actions deployments from within Sanity Studio
-- View deployment history with status and commit details
-- Live status updates while deployments are in progress
-- Track undeployed content changes since the last successful deploy
-
 ## License
 
-MIT
+[MIT](LICENSE)
