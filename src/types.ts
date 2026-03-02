@@ -14,17 +14,7 @@ export interface DeployRun {
 }
 
 /** @public */
-export interface GitHubConfig {
-  owner: string
-  repo: string
-  workflowId: string
-  branch: string
-}
-
-/** @public */
 export interface DeployToolOptions {
-  githubToken: string
-  github: GitHubConfig
   /** Which document types to track for undeployed changes. Omit to disable. */
   documentTypes?: string[]
   /** GROQ expression for the title projection. Defaults to `coalesce(title, name, _type)`. */

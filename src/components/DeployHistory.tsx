@@ -2,8 +2,7 @@ import {useState, useCallback, useEffect, useMemo, useRef} from 'react'
 import {Card, Stack, Flex, Badge, Button, Text} from '@sanity/ui'
 import {useClient} from 'sanity'
 import useSWR from 'swr'
-import type {DeployRun, GitHubConfig} from '../types'
-import {listRecentRuns, triggerWorkflow} from '../github'
+import type {DeployRun} from '../types'
 
 const statusTones: Record<string, 'caution' | 'default' | 'positive' | 'critical'> = {
   queued: 'caution',
@@ -49,7 +48,7 @@ function LiveDuration({since}: {since: string}) {
   const ref = useRef<ReturnType<typeof setInterval>>(undefined)
 
   useEffect(() => {
-    ref.current = setInterval(() => setTick(t => t + 1), 1000)
+    ref.current = setInterval(() => setTick((t) => t + 1), 1000)
     return () => clearInterval(ref.current)
   }, [])
 
@@ -64,35 +63,42 @@ interface ChangedDocument {
 }
 
 interface DeployHistoryProps {
-  github: GitHubConfig
-  githubToken: string
   documentTypes?: string[]
   titleField?: string
 }
 
 const DEFAULT_TITLE_FIELD = 'coalesce(title, name, _type)'
 
-export function DeployHistory({github, githubToken, documentTypes, titleField}: DeployHistoryProps) {
+export function DeployHistory({documentTypes, titleField}: DeployHistoryProps) {
   const [isTriggering, setIsTriggering] = useState(false)
   const [pendingTrigger, setPendingTrigger] = useState(false)
-  const opts = {github, token: githubToken}
   const sanityClient = useClient({apiVersion: '2024-01-01'})
 
   const trackChanges = documentTypes && documentTypes.length > 0
   const resolvedTitleField = titleField ?? DEFAULT_TITLE_FIELD
 
-  const {data, isLoading, error} = useSWR<DeployRun[]>(['deploy-history', github.owner, github.repo], () => listRecentRuns(opts), {
-    refreshInterval: latestData => {
-      if (pendingTrigger) return 3000
-      const hasActive = latestData?.some(r => r.status === 'queued' || r.status === 'in_progress')
-      return hasActive ? 3000 : 30000
+  const {data, isLoading, error} = useSWR<DeployRun[]>(
+    ['deploy-runs'],
+    () =>
+      sanityClient.fetch(
+        `*[_type == "deploy.run"] | order(createdAt desc) [0...10] {
+          "id": runId, status, conclusion, createdAt, updatedAt,
+          headSha, commitMessage, htmlUrl
+        }`,
+      ),
+    {
+      refreshInterval: (latestData) => {
+        if (pendingTrigger) return 3000
+        const hasActive = latestData?.some((r) => r.status === 'queued' || r.status === 'in_progress')
+        return hasActive ? 3000 : 30000
+      },
+      dedupingInterval: 0,
+      revalidateOnFocus: true,
     },
-    dedupingInterval: 0,
-    revalidateOnFocus: true,
-  })
+  )
 
   // True when the API itself reports an active run
-  const apiHasActiveRun = data?.some(r => r.status === 'queued' || r.status === 'in_progress')
+  const apiHasActiveRun = data?.some((r) => r.status === 'queued' || r.status === 'in_progress')
 
   // Clear pendingTrigger once the API confirms an active run, or after 30s timeout
   useEffect(() => {
@@ -107,7 +113,7 @@ export function DeployHistory({github, githubToken, documentTypes, titleField}: 
 
   const hasActiveRun = pendingTrigger || apiHasActiveRun
 
-  const lastCompletedRun = useMemo(() => data?.find(r => r.status === 'completed'), [data])
+  const lastCompletedRun = useMemo(() => data?.find((r) => r.status === 'completed'), [data])
 
   const lastDeployedAt = lastCompletedRun?.createdAt ?? null
 
@@ -126,7 +132,7 @@ export function DeployHistory({github, githubToken, documentTypes, titleField}: 
     {refreshInterval: 30000, revalidateOnFocus: true},
   )
 
-  // Prepend a placeholder row while waiting for GitHub to register the run
+  // Prepend a placeholder row while waiting for the run to appear
   const displayData = useMemo(() => {
     if (!pendingTrigger) return data ?? []
     const placeholder: DeployRun = {
@@ -145,14 +151,18 @@ export function DeployHistory({github, githubToken, documentTypes, titleField}: 
   const trigger = useCallback(async () => {
     setIsTriggering(true)
     try {
-      await triggerWorkflow(opts)
+      await sanityClient.createOrReplace({
+        _type: 'deploy.trigger',
+        _id: 'deploy.trigger',
+        triggeredAt: new Date().toISOString(),
+      })
       setPendingTrigger(true)
     } catch (err) {
       console.error('Deploy trigger failed:', err)
     } finally {
       setIsTriggering(false)
     }
-  }, [github, githubToken])
+  }, [sanityClient])
 
   if (error) console.error('DeployHistory fetch error:', error)
 
@@ -186,7 +196,7 @@ export function DeployHistory({github, githubToken, documentTypes, titleField}: 
                   <Text size={1} weight="semibold">
                     Undeployed changes ({changedDocs.length})
                   </Text>
-                  {changedDocs.map(doc => (
+                  {changedDocs.map((doc) => (
                     <Flex key={doc._id} gap={2} align="center">
                       <Badge fontSize={0}>{doc._type}</Badge>
                       <Text size={1}>{doc.title}</Text>
@@ -215,7 +225,7 @@ export function DeployHistory({github, githubToken, documentTypes, titleField}: 
           </Text>
         ) : (
           <Stack space={3}>
-            {displayData.map(run => {
+            {displayData.map((run) => {
               const started = formatDate(new Date(run.createdAt))
               const isFinished = run.status === 'completed' || run.status === 'failed'
 

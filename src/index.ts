@@ -1,14 +1,18 @@
 import {definePlugin} from 'sanity'
 import {RocketIcon} from '@sanity/icons'
 import {DeployTool} from './DeployTool'
+import {deployRunType, deployTriggerType} from './schema'
 import type {DeployToolOptions} from './types'
 
 /** @public */
-export type {DeployToolOptions, GitHubConfig, DeployRun, DeployStatus} from './types'
+export type {DeployToolOptions, DeployRun, DeployStatus} from './types'
 
 /** @public */
-export const deployTool = definePlugin<DeployToolOptions>(options => ({
+export const deployTool = definePlugin<DeployToolOptions>((options) => ({
   name: 'deploy-tool',
+  schema: {
+    types: [deployRunType, deployTriggerType],
+  },
   tools: [
     {
       name: 'deploy',
