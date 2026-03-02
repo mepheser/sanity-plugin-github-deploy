@@ -74,6 +74,23 @@ function error(message: string, status: number): Response {
   return json({error: message}, status)
 }
 
+async function verifySanitySignature(secret: string, timestamp: string, body: string, expected: string): Promise<boolean> {
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    {name: 'HMAC', hash: 'SHA-256'},
+    false,
+    ['sign'],
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(`${timestamp}.${body}`))
+  // Sanity uses base64url encoding (same as Stripe-style)
+  const bytes = new Uint8Array(sig)
+  const binary = Array.from(bytes).map((b) => String.fromCharCode(b)).join('')
+  const computed = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return computed === expected
+}
+
 async function verifyHmacSha256(secret: string, body: string, signature: string): Promise<boolean> {
   const encoder = new TextEncoder()
   const key = await crypto.subtle.importKey(
@@ -155,19 +172,26 @@ async function writeSanityRunDoc(config: ProjectConfig, run: WorkflowRun): Promi
 async function handleSanityWebhook(request: Request): Promise<Response> {
   const body = await request.text()
 
-  // Validate Sanity webhook signature
-  const signature = request.headers.get('sanity-webhook-signature')
-  if (!signature) {
+  // Validate Sanity webhook signature (Stripe-style: t=<timestamp>,v1=<hmac>)
+  const sigHeader = request.headers.get('sanity-webhook-signature')
+  if (!sigHeader) {
     return error('Missing webhook signature', 401)
   }
 
-  const valid = await verifyHmacSha256(SANITY_WEBHOOK_SECRET!, body, signature)
+  const parts = Object.fromEntries(sigHeader.split(',').map((p) => p.split('=')))
+  const timestamp = parts.t
+  const v1 = parts.v1
+  if (!timestamp || !v1) {
+    return error('Malformed webhook signature', 401)
+  }
+
+  const valid = await verifySanitySignature(SANITY_WEBHOOK_SECRET!, timestamp, body, v1)
   if (!valid) {
     return error('Invalid webhook signature', 403)
   }
 
-  const payload = JSON.parse(body)
-  const projectId = payload?.projectId ?? payload?.sanityProjectId
+  // Project ID comes from Sanity webhook headers, not body
+  const projectId = request.headers.get('sanity-project-id')
 
   // Find project config by Sanity project ID
   const entry = Object.entries(PROJECTS).find(([, cfg]) => cfg.sanityProjectId === projectId)
