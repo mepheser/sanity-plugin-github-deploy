@@ -1,5 +1,8 @@
 # sanity-plugin-github-deploy
 
+[![npm version](https://img.shields.io/npm/v/sanity-plugin-github-deploy)](https://www.npmjs.com/package/sanity-plugin-github-deploy)
+[![GitHub release](https://img.shields.io/github/v/release/mepheser/sanity-plugin-github-deploy)](https://github.com/mepheser/sanity-plugin-github-deploy/releases)
+
 A Sanity Studio plugin for triggering and monitoring GitHub Actions deployments directly from the studio.
 
 ## Motivation
