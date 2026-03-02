@@ -108,7 +108,6 @@ The deploy proxy is a small server or edge function that receives webhooks from 
 | `GITHUB_WEBHOOK_SECRET` | Secret for validating GitHub webhook signatures |
 | `SANITY_WEBHOOK_SECRET` | Secret for validating Sanity webhook calls |
 | `SANITY_TOKEN` | Sanity API token with write access (for writing `deploy.run` documents) |
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins (required, no default `*`) |
 | `PROJECTS` | JSON string mapping repository full names to project config (see below) |
 
 ### `PROJECTS` Configuration
@@ -130,7 +129,6 @@ The deploy proxy is a small server or edge function that receives webhooks from 
 |--------|------|-------------|
 | `POST` | `/sanity-webhook` | Receives Sanity webhook when `deploy.trigger` is created/updated, dispatches GitHub workflow |
 | `POST` | `/github-webhook` | Receives GitHub `workflow_run` events, writes `deploy.run` documents to Sanity |
-| `OPTIONS` | `*` | CORS preflight |
 
 ### Webhook Setup
 

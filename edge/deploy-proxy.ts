@@ -10,8 +10,6 @@
  *   GITHUB_WEBHOOK_SECRET — for validating GitHub webhook signatures
  *   SANITY_WEBHOOK_SECRET — for validating Sanity webhook calls
  *   SANITY_TOKEN          — Sanity API token with write access
- *   ALLOWED_ORIGINS       — comma-separated list of allowed CORS origins (required, no default *)
- *
  *   PROJECTS — JSON string mapping repo full names to config:
  *   {
  *     "org/website": {
@@ -63,34 +61,17 @@ const PROJECTS: Record<string, ProjectConfig> = JSON.parse(
   process.env.PROJECTS ?? '{}',
 )
 
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? '')
-  .split(',')
-  .map((o: string) => o.trim())
-  .filter(Boolean)
-
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function corsHeaders(origin?: string | null): Record<string, string> {
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin ?? '') ? origin! : ''
-  if (!allowedOrigin) return {}
-
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-  }
-}
-
-function json(data: unknown, status: number, origin?: string | null): Response {
+function json(data: unknown, status: number): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {'Content-Type': 'application/json', ...corsHeaders(origin)},
+    headers: {'Content-Type': 'application/json'},
   })
 }
 
-function error(message: string, status: number, origin?: string | null): Response {
-  return json({error: message}, status, origin)
+function error(message: string, status: number): Response {
+  return json({error: message}, status)
 }
 
 async function verifyHmacSha256(secret: string, body: string, signature: string): Promise<boolean> {
@@ -171,18 +152,18 @@ async function writeSanityRunDoc(config: ProjectConfig, run: WorkflowRun): Promi
 
 // ─── Route Handlers ─────────────────────────────────────────────────────────
 
-async function handleSanityWebhook(request: Request, origin?: string | null): Promise<Response> {
+async function handleSanityWebhook(request: Request): Promise<Response> {
   const body = await request.text()
 
   // Validate Sanity webhook signature
   const signature = request.headers.get('sanity-webhook-signature')
   if (!signature) {
-    return error('Missing webhook signature', 401, origin)
+    return error('Missing webhook signature', 401)
   }
 
   const valid = await verifyHmacSha256(SANITY_WEBHOOK_SECRET!, body, signature)
   if (!valid) {
-    return error('Invalid webhook signature', 403, origin)
+    return error('Invalid webhook signature', 403)
   }
 
   const payload = JSON.parse(body)
@@ -191,7 +172,7 @@ async function handleSanityWebhook(request: Request, origin?: string | null): Pr
   // Find project config by Sanity project ID
   const entry = Object.entries(PROJECTS).find(([, cfg]) => cfg.sanityProjectId === projectId)
   if (!entry) {
-    return error('Unknown project', 404, origin)
+    return error('Unknown project', 404)
   }
 
   const [repoFullName, config] = entry
@@ -209,29 +190,29 @@ async function handleSanityWebhook(request: Request, origin?: string | null): Pr
 
   if (!res.ok) {
     const ghBody = await res.text()
-    return error(`GitHub API ${res.status}: ${ghBody}`, 502, origin)
+    return error(`GitHub API ${res.status}: ${ghBody}`, 502)
   }
 
-  return json({ok: true}, 200, origin)
+  return json({ok: true}, 200)
 }
 
-async function handleGitHubWebhook(request: Request, origin?: string | null): Promise<Response> {
+async function handleGitHubWebhook(request: Request): Promise<Response> {
   const body = await request.text()
 
   // Validate GitHub webhook signature
   const signature = request.headers.get('x-hub-signature-256')
   if (!signature) {
-    return error('Missing webhook signature', 401, origin)
+    return error('Missing webhook signature', 401)
   }
 
   const valid = await verifyHmacSha256(GITHUB_WEBHOOK_SECRET!, body, signature)
   if (!valid) {
-    return error('Invalid webhook signature', 403, origin)
+    return error('Invalid webhook signature', 403)
   }
 
   const event = request.headers.get('x-github-event')
   if (event !== 'workflow_run') {
-    return json({ignored: true, reason: `event type: ${event}`}, 200, origin)
+    return json({ignored: true, reason: `event type: ${event}`}, 200)
   }
 
   const payload = JSON.parse(body)
@@ -239,36 +220,30 @@ async function handleGitHubWebhook(request: Request, origin?: string | null): Pr
   const config = repoFullName ? PROJECTS[repoFullName] : null
 
   if (!config) {
-    return json({ignored: true, reason: 'unknown repo'}, 200, origin)
+    return json({ignored: true, reason: 'unknown repo'}, 200)
   }
 
   const run: WorkflowRun = payload.workflow_run
   if (!run) {
-    return error('Missing workflow_run in payload', 400, origin)
+    return error('Missing workflow_run in payload', 400)
   }
 
   await writeSanityRunDoc(config, run)
-  return json({ok: true, runId: run.id}, 200, origin)
+  return json({ok: true, runId: run.id}, 200)
 }
 
 // ─── Main Handler ───────────────────────────────────────────────────────────
 
 BunnySDK.net.http.serve(async (request: Request): Promise<Response> => {
   const url = new URL(request.url)
-  const origin = request.headers.get('Origin')
-
-  // CORS preflight
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {status: 204, headers: corsHeaders(origin)})
-  }
 
   if (url.pathname === '/sanity-webhook' && request.method === 'POST') {
-    return handleSanityWebhook(request, origin)
+    return handleSanityWebhook(request)
   }
 
   if (url.pathname === '/github-webhook' && request.method === 'POST') {
-    return handleGitHubWebhook(request, origin)
+    return handleGitHubWebhook(request)
   }
 
-  return error('Not found', 404, origin)
+  return error('Not found', 404)
 })
