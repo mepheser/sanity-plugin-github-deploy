@@ -1,0 +1,72 @@
+{
+  "name": "sanity-plugin-github-deploy",
+  "version": "1.0.0",
+  "description": "A Sanity Studio plugin for triggering and monitoring GitHub Actions deployments",
+  "keywords": [
+    "sanity",
+    "sanity-plugin",
+    "github",
+    "deploy"
+  ],
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "browserslist": "extends @sanity/browserslist-config",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "sanity.json",
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "plugin-kit verify-package --silent && pkg-utils build --strict --check --clean",
+    "watch": "pkg-utils watch --strict",
+    "clean": "rm -rf dist",
+    "link-watch": "plugin-kit link-watch",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@sanity/incompatible-plugin": "^1.0.4",
+    "swr": "^2.4.1"
+  },
+  "devDependencies": {
+    "@sanity/browserslist-config": "^1.0.5",
+    "@sanity/icons": "^3.7.4",
+    "@sanity/pkg-utils": "^10.4.5",
+    "@sanity/plugin-kit": "^4.0.20",
+    "@sanity/ui": "^2.10.10",
+    "@types/react": "^19",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sanity": "^3.63.0",
+    "styled-components": "^6.1.15",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19",
+    "sanity": "^3.0.0",
+    "styled-components": "^6.1.0"
+  },
+  "sanityPlugin": {
+    "verifyPackage": {
+      "moduleType": false,
+      "eslintImports": false
+    }
+  }
+}
