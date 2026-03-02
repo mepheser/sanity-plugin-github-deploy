@@ -26,6 +26,18 @@ The plugin triggers this workflow via GitHub's [workflow dispatch API](https://d
 - List of changed content (documents) since last live deployment
 - Button to trigger a new deployment with progress indicator
 
+### All content up to date
+
+![All content is up to date](docs/sanity-plugin-gihub-deploy-1.png)
+
+### Undeployed changes
+
+![Undeployed changes detected](docs/sanity-plugin-gihub-deploy-2.png)
+
+### Deployment in progress
+
+![Deployment in progress](docs/sanity-plugin-gihub-deploy-3.png)
+
 ## Installation
 
 ```sh
