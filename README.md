@@ -18,17 +18,9 @@ The plugin uses **Sanity documents** and **webhooks** — no secrets are needed 
 - **Tracking status:** GitHub sends `workflow_run` webhook events to the deploy proxy, which writes `deploy.run` documents back to Sanity. The Studio reads these via GROQ.
 
 ```
-Trigger flow:
-  Studio ──create doc──▶ Sanity ──webhook──▶ Deploy Proxy ──dispatch──▶ GitHub
-           deploy.trigger                                   GITHUB_TOKEN
-
-Status flow:
-  GitHub ──workflow_run──▶ Deploy Proxy ──mutate──▶ Sanity
-           webhook event                            deploy.run docs
-                                                    SANITY_TOKEN
-
-Read flow:
-  Studio ──GROQ──▶ Sanity API (native cookie/token auth)
+Trigger:  Studio ─── deploy.trigger doc ──▶ Sanity ─── webhook ──▶ Proxy ─── dispatch ──▶ GitHub
+Status:   GitHub ─── workflow_run ─────────▶ Proxy ──── mutate ──▶ Sanity (deploy.run docs)
+Read:     Studio ─── GROQ query ───────────▶ Sanity API (native auth)
 ```
 
 ## Preparation
