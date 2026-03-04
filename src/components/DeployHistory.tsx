@@ -117,20 +117,26 @@ export function DeployHistory({documentTypes, titleField}: DeployHistoryProps) {
 
   const lastDeployedAt = lastCompletedRun?.createdAt ?? null
 
-  // Query Sanity for documents changed since last deployment
-  const {data: changedDocs} = useSWR<ChangedDocument[]>(
+  // Query Sanity for published documents changed since last deployment
+  const {data: changedDocsResult} = useSWR<{total: number; docs: ChangedDocument[]}>(
     trackChanges && lastDeployedAt ? ['undeployed-changes', lastDeployedAt, documentTypes] : null,
     () =>
       sanityClient.fetch(
-        `*[_type in $documentTypes && _updatedAt > $lastDeployedAt]
-          | order(_updatedAt desc) {
-          _id, _type, _updatedAt,
-          "title": ${resolvedTitleField}
+        `{
+          "total": count(*[_type in $documentTypes && !(_id in path("drafts.**")) && _updatedAt > $lastDeployedAt]),
+          "docs": *[_type in $documentTypes && !(_id in path("drafts.**")) && _updatedAt > $lastDeployedAt]
+            | order(_updatedAt desc) [0...10] {
+            _id, _type, _updatedAt,
+            "title": ${resolvedTitleField}
+          }
         }`,
         {lastDeployedAt, documentTypes},
       ),
     {refreshInterval: 30000, revalidateOnFocus: true},
   )
+
+  const changedDocs = changedDocsResult?.docs
+  const changedDocsTotal = changedDocsResult?.total ?? 0
 
   // Prepend a placeholder row while waiting for the run to appear
   const displayData = useMemo(() => {
@@ -194,7 +200,7 @@ export function DeployHistory({documentTypes, titleField}: DeployHistoryProps) {
               {trackChanges && changedDocs && changedDocs.length > 0 ? (
                 <Stack space={2}>
                   <Text size={1} weight="semibold">
-                    Undeployed changes ({changedDocs.length})
+                    Undeployed changes ({changedDocsTotal})
                   </Text>
                   {changedDocs.map((doc) => (
                     <Flex key={doc._id} gap={2} align="center">
@@ -205,6 +211,11 @@ export function DeployHistory({documentTypes, titleField}: DeployHistoryProps) {
                       </Text>
                     </Flex>
                   ))}
+                  {changedDocsTotal > changedDocs.length && (
+                    <Text size={1} muted>
+                      ...and {changedDocsTotal - changedDocs.length} more
+                    </Text>
+                  )}
                 </Stack>
               ) : trackChanges && changedDocs ? (
                 <Text size={1} muted>

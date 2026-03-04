@@ -247,6 +247,12 @@ async function handleGitHubWebhook(request: Request): Promise<Response> {
     return json({ignored: true, reason: 'unknown repo'}, 200)
   }
 
+  // Filter by configured workflow — path ends with workflowId (e.g. "deploy.yml")
+  const workflowPath: string = payload.workflow?.path ?? ''
+  if (!workflowPath.endsWith(config.workflowId)) {
+    return json({ignored: true, reason: `workflow: ${workflowPath}`}, 200)
+  }
+
   const run: WorkflowRun = payload.workflow_run
   if (!run) {
     return error('Missing workflow_run in payload', 400)

@@ -1,6 +1,6 @@
 {
   "name": "sanity-plugin-github-deploy",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A Sanity Studio plugin for triggering and monitoring GitHub Actions deployments",
   "keywords": [
     "sanity",
@@ -71,7 +71,7 @@
   "peerDependencies": {
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19",
-    "sanity": "^3.0.0",
+    "sanity": "^3.0.0 || ^5.0.0",
     "styled-components": "^6.1.0"
   },
   "sanityPlugin": {
