@@ -1,6 +1,6 @@
 {
   "name": "sanity-plugin-github-deploy",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A Sanity Studio plugin for triggering and monitoring GitHub Actions deployments",
   "keywords": [
     "sanity",
