@@ -81,7 +81,7 @@ export function DeployHistory({documentTypes, titleField}: DeployHistoryProps) {
     ['deploy-runs'],
     () =>
       sanityClient.fetch(
-        `*[_type == "deploy.run"] | order(createdAt desc) [0...10] {
+        `*[_type == "deployRun"] | order(createdAt desc) [0...10] {
           "id": runId, status, conclusion, createdAt, updatedAt,
           headSha, commitMessage, htmlUrl
         }`,
@@ -158,8 +158,8 @@ export function DeployHistory({documentTypes, titleField}: DeployHistoryProps) {
     setIsTriggering(true)
     try {
       await sanityClient.createOrReplace({
-        _type: 'deploy.trigger',
-        _id: 'deploy.trigger',
+        _type: 'deployTrigger',
+        _id: 'deployTrigger',
         triggeredAt: new Date().toISOString(),
       })
       setPendingTrigger(true)

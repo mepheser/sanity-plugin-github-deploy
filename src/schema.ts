@@ -2,7 +2,7 @@ import {defineType, defineField} from 'sanity'
 
 /** @internal */
 export const deployRunType = defineType({
-  name: 'deploy.run',
+  name: 'deployRun',
   title: 'Deploy Run',
   type: 'document',
   liveEdit: true,
@@ -20,7 +20,7 @@ export const deployRunType = defineType({
 
 /** @internal */
 export const deployTriggerType = defineType({
-  name: 'deploy.trigger',
+  name: 'deployTrigger',
   title: 'Deploy Trigger',
   type: 'document',
   fields: [
